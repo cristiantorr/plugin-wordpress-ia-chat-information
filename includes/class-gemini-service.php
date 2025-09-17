@@ -31,12 +31,16 @@ class WP_Gemini_Service
       'body' => json_encode($body),
       'method' => 'POST',
       'data_format' => 'body',
+      'timeout' => 30,
     ]);
 
     if (is_wp_error($response)) {
-      return "Error: " . $response->get_error_message();
+      $error_message = $response->get_error_message();
+      if (strpos($error_message, 'cURL error 28') !== false) {
+        return "Error: El servidor tardó demasiado en responder. Intenta nuevamente en unos segundos.";
+      }
+      return "Error: " . $error_message;
     }
-
     $data = json_decode(wp_remote_retrieve_body($response), true);
 
     return $data['candidates'][0]['content']['parts'][0]['text'] ?? "No obtuve respuesta de Gemini.";
