@@ -1,4 +1,7 @@
 <?php
+
+use League\CommonMark\CommonMarkConverter;
+
 class WP_Gemini_QA_Shortcode
 {
 
@@ -233,7 +236,24 @@ class WP_Gemini_QA_Shortcode
     foreach ($floorplans as $f) {
       $summary .= "- {$f['title']} | img: " . ($f['featured_image_url'] ?? 'no-img') . "\n";
       $summary .= "Plano: {$f['title']}\n";
+      $summary .= "square: " . ($f['acf']['square'] ?? 'N/D') . "\n";
+      $summary .= "title_download: " . ($f['acf']['title_download'] ?? 'N/D') . "\n";
+      $summary .= "download: " . ($f['acf']['download'] ?? 'N/D') . "\n";
+      if (!empty($f['acf']['floorplans']) && is_array($f['acf']['floorplans'])) {
+        foreach ($f['acf']['floorplans'] as $index => $floorplan) {
+          $title = $floorplan['title_tab'] ?? 'Sin título';
+          $image_tab = $floorplan['image_tab'] ?? 'N/D';
+          $imagexs_tab = $floorplan['imagexs_tab'] ?? 'N/D';
+          $covered = $elevation['covered'] ?? 'N/D';
+          $bathrooms = $elevation['bathrooms'] ?? 'N/D';
+          $garage = $elevation['garage'] ?? 'N/D';
 
+
+          $summary .= "Title " . ($index + 1) . ": {$title}, {$image_tab}, {$imagexs_tab}.\n";
+        }
+      } else {
+        $summary .= "  No hay elevaciones disponibles.\n";
+      }
       if (!empty($f['acf']['elevations']) && is_array($f['acf']['elevations'])) {
         foreach ($f['acf']['elevations'] as $index => $elevation) {
           $title = $elevation['elevation_title'] ?? 'Sin título';
@@ -288,16 +308,18 @@ EOT;
 
     $gemini = new WP_Gemini_Service();
     $answer = $gemini->ask_gemini($instruction, $question);
+    $converter = new CommonMarkConverter();
+    $answer_html = $converter->convert($answer)->getContent();
+
 
     if (is_wp_error($answer)) {
 
       $error_message = 'Hubo un problema al procesar tu solicitud. Por favor, intenta nuevamente más tarde.';
       wp_send_json(['error' => $error_message]);
     } else {
-      var_dump($answer);
-      die();
-      $answer_formatted = wpautop($answer); // convierte \n\n en <p>, y \n en <br>
-      wp_send_json(['answer' => $answer_formatted]);
+
+      $answer_html = wp_kses_post($answer_html);
+      wp_send_json(['answer' => $answer_html]);
     }
   }
 }
