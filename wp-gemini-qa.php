@@ -11,6 +11,7 @@ if (! defined('ABSPATH')) exit;
 
 require_once plugin_dir_path(__FILE__) . 'includes/class-gemini-service.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-shortcode.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 // Inicializar shortcode
 add_action('init', function () {
